@@ -1,0 +1,103 @@
+#!/usr/bin/env python
+#coding=utf8
+
+import os
+import getpass
+import md5
+from prettytable import PrettyTable
+
+def listAccount():
+    tbl = PrettyTable(['行号', '类型', '账号'])
+    with open(filePath) as f:
+        for i,line in enumerate(f.readlines()):
+            if i != 0:
+                tbl.add_row([i] + line.strip().split(",")[:2])
+    print tbl
+
+def showAccount():
+    print "请输入您要查询的账户类型"
+    key = raw_input()
+    tbl = PrettyTable(['类型','账号','密码'])
+    with open(filePath) as f:
+        for i,line in enumerate(f.readlines()):
+            if i != 0 and line.strip().split(",")[0] == key:
+                tbl.add_row(line.strip().split(","))
+    print tbl
+
+
+
+def echoHelp():
+    print "\n"
+    print "*-" * 10
+    print "输入 list      并回车 列出您的账号"
+    print "输入 help      并回车 获取帮助"
+    print "输入 show      并回车 查看某账号密码"
+    print "输入 add       并回车 添加账号"
+    print "输入 rm        并回车 删除账号"
+    print "输入 changepwd 并回车 修改账号信息账号"
+    print "输入 exit      并回车 退出"
+    print "*-" * 10
+    print "\n"
+
+def addAccount():
+    print "输入账号类型 （比如 京东）"
+    category = raw_input()
+    print "输入账户名称 （比如 刘强东）"
+    account  = raw_input()
+    pwd = getpass.getpass("请输入你的密码")
+    with open(filePath, 'a+') as f:
+        f.write("{},{},{}\n".format(category, account, pwd))
+    print "成功创建新账号"
+
+def changepwd():
+    pwd = getpass.getpass("请输入您的新的主密码")
+    os.system("sed -ie '1s/.*/{}/' {}".format(md5.new(pwd).hexdigest(), filePath))
+    print "修改主密码成功"
+
+def removeAccount():
+    print "请输入您要删除的账号类型"
+    key = raw_input()
+    temp = []
+    with open(filePath) as f:
+        for i,line in enumerate(f.readlines()):
+            if i != 0 and key == line.strip().split(",")[0]:
+                temp.append(i+1)
+    for t in temp:
+        os.system("sed -ie '{}s/.*/dddddddddd/' {}".format(t, filePath))
+    os.system("sed -ie '/dddddddddd/d' {}".format(filePath))
+    print "删除成功"
+
+
+filePath = os.getenv("HOME") + "/.pass"
+
+if not os.path.exists(filePath):
+    os.system("touch ~/.pass")
+    password = getpass.getpass("请设置你的主密码")
+    with open(filePath, 'a+') as f:
+        f.write(md5.new(password).hexdigest() + '\n')
+    print "设置主密码成功"
+
+password = getpass.getpass("请输入你的主密码")
+with open(filePath) as f:
+    md5_key = f.readline().strip()
+while md5.new(password).hexdigest() != md5_key:
+    password = getpass.getpass("密码错误请重试")
+
+echoHelp()
+
+while True:
+    key = raw_input()
+    if key == "list":
+        listAccount()
+    if key == "show":
+        showAccount()
+    if key == "exit":
+        exit()
+    if key == "help":
+        echoHelp()
+    if key == "add":
+        addAccount()
+    if key == "changepwd":
+        changepwd()
+    if key == "rm":
+        removeAccount()
